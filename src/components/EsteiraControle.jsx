@@ -26,7 +26,7 @@ const CANAIS_OPCIONAIS = [
 export default function EsteiraControle({ propostaId, statusAtual, onAcaoExecutada }) {
   const [acoes, setAcoes]           = useState([])
   const [observacao, setObservacao] = useState('')
-  const [canais, setCanais]         = useState([])   // canais opcionais selecionados
+  const [canais, setCanais]         = useState([])
   const [loading, setLoading]       = useState(false)
 
   useEffect(() => {

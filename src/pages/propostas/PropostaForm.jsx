@@ -2,15 +2,17 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { buscarProposta, criarProposta, atualizarProposta } from '../../api/propostaApi'
+import { uploadDocumento } from '../../api/documentoApi'
 import { listarClientes } from '../../api/clienteApi'
 
-const INITIAL = { codigo:'', titulo:'', descricao:'', valor:'', observacoes:'', cliente:{ id:'' } }
+const INITIAL = { titulo: '', descricao: '', valor: '', observacoes: '', cliente: { id: '' } }
 
 export default function PropostaForm() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [form, setForm] = useState(INITIAL)
+  const [form, setForm]         = useState(INITIAL)
   const [clientes, setClientes] = useState([])
+  const [arquivo, setArquivo]   = useState(null)
   const [salvando, setSalvando] = useState(false)
   const editando = !!id
 
@@ -25,16 +27,43 @@ export default function PropostaForm() {
     else setForm(prev => ({ ...prev, [name]: value }))
   }
 
+  function handleArquivo(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    if (file.type !== 'application/pdf') {
+      toast.error('Apenas arquivos PDF são aceitos.')
+      e.target.value = ''
+      setArquivo(null)
+      return
+    }
+    setArquivo(file)
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
+
+    if (!editando && !arquivo) {
+      toast.error('Anexe um documento PDF antes de salvar.')
+      return
+    }
+
     setSalvando(true)
     try {
-      if (editando) await atualizarProposta(id, form)
-      else await criarProposta(form)
-      toast.success(editando ? 'Proposta atualizada!' : 'Proposta criada com sucesso!')
+      if (editando) {
+        await atualizarProposta(id, form)
+        if (arquivo) await uploadDocumento(id, arquivo)
+        toast.success('Proposta atualizada!')
+      } else {
+        // 1º cria proposta → 2º envia PDF obrigatório
+        const res = await criarProposta(form)
+        const novaId = res.data.id
+        await uploadDocumento(novaId, arquivo)
+        toast.success(`Proposta criada! Código: ${res.data.codigo}`)
+      }
       navigate('/propostas')
     } catch (err) {
-      toast.error(err.mensagem || 'Erro ao salvar proposta.')
+      const msg = err?.response?.data?.mensagem || err?.response?.data || 'Erro ao salvar proposta.'
+      toast.error(typeof msg === 'string' ? msg : 'Erro ao salvar proposta.')
     } finally {
       setSalvando(false)
     }
@@ -48,47 +77,111 @@ export default function PropostaForm() {
         <div className="card-body p-4">
           <form onSubmit={handleSubmit}>
 
+            {/* Valor + Título */}
             <div className="row g-3 mb-3">
-              <div className="col-md-6">
-                <label className="form-label fw-semibold">Código *</label>
-                <input className="form-control" name="codigo" value={form.codigo} onChange={handleChange} required disabled={editando} placeholder="Ex: PROP-2024-001" />
-              </div>
-              <div className="col-md-6">
+              <div className="col-md-5">
                 <label className="form-label fw-semibold">Valor (R$) *</label>
                 <div className="input-group">
                   <span className="input-group-text">R$</span>
-                  <input className="form-control" name="valor" type="number" step="0.01" min="0.01" value={form.valor} onChange={handleChange} required />
+                  <input
+                    className="form-control"
+                    name="valor"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={form.valor}
+                    onChange={handleChange}
+                    required
+                  />
                 </div>
+              </div>
+              <div className="col-md-7">
+                <label className="form-label fw-semibold">Título *</label>
+                <input
+                  className="form-control"
+                  name="titulo"
+                  value={form.titulo}
+                  onChange={handleChange}
+                  required
+                />
               </div>
             </div>
 
-            <div className="mb-3">
-              <label className="form-label fw-semibold">Título *</label>
-              <input className="form-control" name="titulo" value={form.titulo} onChange={handleChange} required />
-            </div>
-
+            {/* Descrição */}
             <div className="mb-3">
               <label className="form-label fw-semibold">Descrição</label>
-              <textarea className="form-control" name="descricao" value={form.descricao || ''} onChange={handleChange} rows={3} />
+              <textarea
+                className="form-control"
+                name="descricao"
+                value={form.descricao || ''}
+                onChange={handleChange}
+                rows={3}
+              />
             </div>
 
+            {/* Cliente */}
             <div className="mb-3">
               <label className="form-label fw-semibold">Cliente *</label>
-              <select className="form-select" name="clienteId" value={form.cliente?.id || ''} onChange={handleChange} required>
+              <select
+                className="form-select"
+                name="clienteId"
+                value={form.cliente?.id || ''}
+                onChange={handleChange}
+                required
+              >
                 <option value="">Selecione um cliente...</option>
-                {clientes.map(c => <option key={c.id} value={c.id}>{c.nome} — {c.cpfCnpj}</option>)}
+                {clientes.map(c => (
+                  <option key={c.id} value={c.id}>{c.nome} — {c.cpfCnpj}</option>
+                ))}
               </select>
             </div>
 
-            <div className="mb-4">
+            {/* Observações */}
+            <div className="mb-3">
               <label className="form-label fw-semibold">Observações</label>
-              <textarea className="form-control" name="observacoes" value={form.observacoes || ''} onChange={handleChange} rows={2} />
+              <textarea
+                className="form-control"
+                name="observacoes"
+                value={form.observacoes || ''}
+                onChange={handleChange}
+                rows={2}
+              />
+            </div>
+
+            {/* Documento PDF obrigatório */}
+            <div className="mb-4">
+              <label className="form-label fw-semibold">
+                Documento PDF{' '}
+                {!editando
+                  ? <span className="text-danger">*</span>
+                  : <span className="text-muted fw-normal">(opcional — substitui o atual)</span>
+                }
+              </label>
+              <input
+                className="form-control"
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={handleArquivo}
+                required={!editando}
+              />
+              {arquivo && (
+                <div className="form-text text-success mt-1">
+                  ✔ {arquivo.name} ({(arquivo.size / 1024).toFixed(1)} KB)
+                </div>
+              )}
+              <div className="form-text text-muted">Apenas arquivos .pdf — máximo 10 MB</div>
             </div>
 
             <div className="d-flex justify-content-end gap-2 pt-3 border-top">
-              <button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/propostas')}>Cancelar</button>
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => navigate('/propostas')}
+              >
+                Cancelar
+              </button>
               <button type="submit" className="btn btn-primary" disabled={salvando}>
-                {salvando ? <span className="spinner-border spinner-border-sm me-1"/> : null}
+                {salvando && <span className="spinner-border spinner-border-sm me-1" />}
                 Salvar Proposta
               </button>
             </div>
