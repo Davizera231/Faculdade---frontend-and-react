@@ -16,10 +16,18 @@ const BTN_VARIANT = {
   REABRIR:        'btn-warning'
 }
 
+// Canais opcionais que o usuário pode habilitar
+const CANAIS_OPCIONAIS = [
+  { key: 'SMS',      label: 'SMS' },
+  { key: 'WHATSAPP', label: 'WhatsApp' },
+  { key: 'FACEBOOK', label: 'Facebook' },
+]
+
 export default function EsteiraControle({ propostaId, statusAtual, onAcaoExecutada }) {
-  const [acoes, setAcoes] = useState([])
+  const [acoes, setAcoes]           = useState([])
   const [observacao, setObservacao] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [canais, setCanais]         = useState([])   // canais opcionais selecionados
+  const [loading, setLoading]       = useState(false)
 
   useEffect(() => {
     buscarAcoes(propostaId)
@@ -27,15 +35,22 @@ export default function EsteiraControle({ propostaId, statusAtual, onAcaoExecuta
       .catch(() => setAcoes([]))
   }, [propostaId, statusAtual])
 
+  function toggleCanal(key) {
+    setCanais(prev =>
+      prev.includes(key) ? prev.filter(c => c !== key) : [...prev, key]
+    )
+  }
+
   async function handleAcao(acao) {
     setLoading(true)
     try {
-      const r = await executarAcao(propostaId, acao, observacao)
+      // EMAIL é sempre enviado pelo backend — passamos apenas os opcionais
+      const r = await executarAcao(propostaId, acao, observacao, canais)
       toast.success(r.data.mensagem || 'Ação executada com sucesso!')
       setObservacao('')
       onAcaoExecutada()
     } catch (err) {
-      toast.error(err.mensagem || 'Erro ao executar ação.')
+      toast.error(err?.response?.data?.mensagem || 'Erro ao executar ação.')
     } finally {
       setLoading(false)
     }
@@ -51,8 +66,11 @@ export default function EsteiraControle({ propostaId, statusAtual, onAcaoExecuta
           </p>
         ) : (
           <>
+            {/* Observação */}
             <div className="mb-3">
-              <label className="form-label fw-semibold">Observação <span className="text-muted fw-normal">(opcional)</span></label>
+              <label className="form-label fw-semibold">
+                Observação <span className="text-muted fw-normal">(opcional)</span>
+              </label>
               <input
                 className="form-control"
                 value={observacao}
@@ -62,6 +80,48 @@ export default function EsteiraControle({ propostaId, statusAtual, onAcaoExecuta
               />
             </div>
 
+            {/* Canais de notificação */}
+            <div className="mb-3">
+              <label className="form-label fw-semibold">Canais de Notificação</label>
+              <div className="d-flex flex-wrap gap-3 align-items-center border rounded p-2 bg-light">
+
+                {/* E-mail — sempre obrigatório, não pode desmarcar */}
+                <div className="form-check mb-0">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="canal-email"
+                    checked
+                    disabled
+                  />
+                  <label className="form-check-label text-muted" htmlFor="canal-email">
+                    E-mail{' '}
+                    <span className="badge bg-secondary ms-1" style={{ fontSize: '0.7rem' }}>
+                      obrigatório
+                    </span>
+                  </label>
+                </div>
+
+                {/* Canais opcionais */}
+                {CANAIS_OPCIONAIS.map(({ key, label }) => (
+                  <div className="form-check mb-0" key={key}>
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id={`canal-${key}`}
+                      checked={canais.includes(key)}
+                      onChange={() => toggleCanal(key)}
+                      disabled={loading}
+                    />
+                    <label className="form-check-label" htmlFor={`canal-${key}`}>
+                      {label}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Botões de ação */}
             <div className="d-flex gap-2 flex-wrap">
               {acoes.map(acao => (
                 <button
@@ -70,9 +130,7 @@ export default function EsteiraControle({ propostaId, statusAtual, onAcaoExecuta
                   onClick={() => handleAcao(acao)}
                   disabled={loading}
                 >
-                  {loading
-                    ? <span className="spinner-border spinner-border-sm me-1"/>
-                    : null}
+                  {loading && <span className="spinner-border spinner-border-sm me-1" />}
                   {LABEL[acao] || acao}
                 </button>
               ))}
