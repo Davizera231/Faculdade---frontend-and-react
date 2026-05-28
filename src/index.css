@@ -1,0 +1,19 @@
+/* Overrides e complementos ao Bootstrap */
+body { background-color: #f4f6f9; }
+
+.navbar-brand { font-weight: 700; letter-spacing: -0.02em; }
+
+/* Badges de status da esteira */
+.badge-rascunho  { background-color: #6c757d !important; }
+.badge-analise   { background-color: #0d6efd !important; }
+.badge-aprovada  { background-color: #198754 !important; }
+.badge-reprovada { background-color: #dc3545 !important; }
+
+/* Tabela sem borda inferior na última linha */
+.table tbody tr:last-child td { border-bottom: 0; }
+
+/* Card de detalhe */
+.detail-label { width: 150px; font-size: .82rem; color: #6c757d; font-weight: 500; flex-shrink: 0; }
+
+/* Esteira */
+.esteira-card { border-left: 4px solid #0d6efd; }
