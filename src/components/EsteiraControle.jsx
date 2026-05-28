@@ -18,15 +18,15 @@ const BTN_VARIANT = {
 
 // Canais opcionais que o usuário pode habilitar
 const CANAIS_OPCIONAIS = [
-  { key: 'SMS',       label: 'SMS' },
-  { key: 'WHATSAPP',  label: 'WhatsApp' },
-  { key: 'FACEBOOK',  label: 'Facebook' },
+  { key: 'SMS',      label: 'SMS' },
+  { key: 'WHATSAPP', label: 'WhatsApp' },
+  { key: 'FACEBOOK', label: 'Facebook' },
 ]
 
 export default function EsteiraControle({ propostaId, statusAtual, onAcaoExecutada }) {
   const [acoes, setAcoes]           = useState([])
   const [observacao, setObservacao] = useState('')
-  const [canais, setCanais]         = useState([])   // canais opcionais selecionados
+  const [canais, setCanais]         = useState([])
   const [loading, setLoading]       = useState(false)
 
   useEffect(() => {
@@ -83,10 +83,10 @@ export default function EsteiraControle({ propostaId, statusAtual, onAcaoExecuta
             {/* Canais de notificação */}
             <div className="mb-3">
               <label className="form-label fw-semibold">Canais de Notificação</label>
-              <div className="d-flex flex-wrap gap-3 align-items-center">
+              <div className="d-flex flex-wrap gap-3 align-items-center border rounded p-2 bg-light">
 
                 {/* E-mail — sempre obrigatório, não pode desmarcar */}
-                <div className="form-check">
+                <div className="form-check mb-0">
                   <input
                     className="form-check-input"
                     type="checkbox"
@@ -95,13 +95,16 @@ export default function EsteiraControle({ propostaId, statusAtual, onAcaoExecuta
                     disabled
                   />
                   <label className="form-check-label text-muted" htmlFor="canal-email">
-                    E-mail <span className="badge bg-secondary ms-1" style={{ fontSize: '0.7rem' }}>obrigatório</span>
+                    E-mail{' '}
+                    <span className="badge bg-secondary ms-1" style={{ fontSize: '0.7rem' }}>
+                      obrigatório
+                    </span>
                   </label>
                 </div>
 
                 {/* Canais opcionais */}
                 {CANAIS_OPCIONAIS.map(({ key, label }) => (
-                  <div className="form-check" key={key}>
+                  <div className="form-check mb-0" key={key}>
                     <input
                       className="form-check-input"
                       type="checkbox"
