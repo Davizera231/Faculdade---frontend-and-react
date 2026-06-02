@@ -8,7 +8,8 @@ const INITIAL = { nome:'', cpfCnpj:'', email:'', telefone:'', endereco:'', cidad
 export default function ClienteForm() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [form, setForm] = useState(INITIAL)
+  const [form, setForm]     = useState(INITIAL)
+  const [erros, setErros]   = useState({})
   const [salvando, setSalvando] = useState(false)
   const editando = !!id
 
@@ -20,10 +21,20 @@ export default function ClienteForm() {
     }
   }, [id])
 
-  const handleChange = e => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+  function handleChange(e) {
+    const { name, value } = e.target
+    setForm(prev => ({ ...prev, [name]: value }))
+    // limpa o erro do campo ao digitar
+    if (erros[name]) setErros(prev => ({ ...prev, [name]: null }))
+  }
+
+  function cls(campo) {
+    return `form-control${erros[campo] ? ' is-invalid' : ''}`
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
+    setErros({})
     setSalvando(true)
     try {
       if (editando) await atualizarCliente(id, form)
@@ -31,8 +42,14 @@ export default function ClienteForm() {
       toast.success(editando ? 'Cliente atualizado!' : 'Cliente cadastrado!')
       navigate('/clientes')
     } catch (err) {
-      const msg = err?.response?.data?.erro || 'Erro ao salvar cliente.'
-      toast.error(msg)
+      const data = err?.response?.data
+      if (data?.campos) {
+        // erros de validação campo a campo
+        setErros(data.campos)
+        toast.error(data.erro || 'Verifique os campos obrigatórios.')
+      } else {
+        toast.error(data?.erro || 'Erro ao salvar cliente.')
+      }
     } finally {
       setSalvando(false)
     }
@@ -48,13 +65,15 @@ export default function ClienteForm() {
 
             <div className="mb-3">
               <label className="form-label fw-semibold">Nome *</label>
-              <input className="form-control" name="nome" value={form.nome} onChange={handleChange} />
+              <input className={cls('nome')} name="nome" value={form.nome} onChange={handleChange} />
+              {erros.nome && <div className="invalid-feedback">{erros.nome}</div>}
             </div>
 
             <div className="row g-3 mb-3">
               <div className="col-md-8">
                 <label className="form-label fw-semibold">CPF / CNPJ *</label>
-                <input className="form-control" name="cpfCnpj" value={form.cpfCnpj} onChange={handleChange} disabled={editando} />
+                <input className={cls('cpfCnpj')} name="cpfCnpj" value={form.cpfCnpj} onChange={handleChange} disabled={editando} />
+                {erros.cpfCnpj && <div className="invalid-feedback">{erros.cpfCnpj}</div>}
               </div>
               <div className="col-md-4">
                 <label className="form-label fw-semibold">Tipo</label>
