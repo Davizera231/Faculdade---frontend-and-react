@@ -13,6 +13,7 @@ export default function PropostaForm() {
   const [form, setForm]         = useState(INITIAL)
   const [clientes, setClientes] = useState([])
   const [arquivo, setArquivo]   = useState(null)
+  const [erros, setErros]       = useState({})
   const [salvando, setSalvando] = useState(false)
   const editando = !!id
 
@@ -25,6 +26,7 @@ export default function PropostaForm() {
     const { name, value } = e.target
     if (name === 'clienteId') setForm(prev => ({ ...prev, cliente: { id: parseInt(value) } }))
     else setForm(prev => ({ ...prev, [name]: value }))
+    if (erros[name]) setErros(prev => ({ ...prev, [name]: null }))
   }
 
   function handleArquivo(e) {
@@ -39,8 +41,17 @@ export default function PropostaForm() {
     setArquivo(file)
   }
 
+  function cls(campo) {
+    return `form-control${erros[campo] ? ' is-invalid' : ''}`
+  }
+
+  function clsSelect(campo) {
+    return `form-select${erros[campo] ? ' is-invalid' : ''}`
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
+    setErros({})
     setSalvando(true)
     try {
       if (editando) {
@@ -55,8 +66,13 @@ export default function PropostaForm() {
       }
       navigate('/propostas')
     } catch (err) {
-      const msg = err?.response?.data?.erro || 'Erro ao salvar proposta.'
-      toast.error(msg)
+      const data = err?.response?.data
+      if (data?.campos) {
+        setErros(data.campos)
+        toast.error(data.erro || 'Verifique os campos obrigatórios.')
+      } else {
+        toast.error(data?.erro || 'Erro ao salvar proposta.')
+      }
     } finally {
       setSalvando(false)
     }
@@ -77,64 +93,45 @@ export default function PropostaForm() {
                 <div className="input-group">
                   <span className="input-group-text">R$</span>
                   <input
-                    className="form-control"
+                    className={cls('valor')}
                     name="valor"
                     type="number"
                     step="0.01"
                     value={form.valor}
                     onChange={handleChange}
                   />
+                  {erros.valor && <div className="invalid-feedback">{erros.valor}</div>}
                 </div>
               </div>
               <div className="col-md-7">
                 <label className="form-label fw-semibold">Título *</label>
-                <input
-                  className="form-control"
-                  name="titulo"
-                  value={form.titulo}
-                  onChange={handleChange}
-                />
+                <input className={cls('titulo')} name="titulo" value={form.titulo} onChange={handleChange} />
+                {erros.titulo && <div className="invalid-feedback">{erros.titulo}</div>}
               </div>
             </div>
 
             {/* Descrição */}
             <div className="mb-3">
               <label className="form-label fw-semibold">Descrição</label>
-              <textarea
-                className="form-control"
-                name="descricao"
-                value={form.descricao || ''}
-                onChange={handleChange}
-                rows={3}
-              />
+              <textarea className="form-control" name="descricao" value={form.descricao || ''} onChange={handleChange} rows={3} />
             </div>
 
             {/* Cliente */}
             <div className="mb-3">
               <label className="form-label fw-semibold">Cliente *</label>
-              <select
-                className="form-select"
-                name="clienteId"
-                value={form.cliente?.id || ''}
-                onChange={handleChange}
-              >
+              <select className={clsSelect('cliente')} name="clienteId" value={form.cliente?.id || ''} onChange={handleChange}>
                 <option value="">Selecione um cliente...</option>
                 {clientes.map(c => (
                   <option key={c.id} value={c.id}>{c.nome} — {c.cpfCnpj}</option>
                 ))}
               </select>
+              {erros.cliente && <div className="invalid-feedback">{erros.cliente}</div>}
             </div>
 
             {/* Observações */}
             <div className="mb-3">
               <label className="form-label fw-semibold">Observações</label>
-              <textarea
-                className="form-control"
-                name="observacoes"
-                value={form.observacoes || ''}
-                onChange={handleChange}
-                rows={2}
-              />
+              <textarea className="form-control" name="observacoes" value={form.observacoes || ''} onChange={handleChange} rows={2} />
             </div>
 
             {/* Documento PDF */}
@@ -146,12 +143,7 @@ export default function PropostaForm() {
                   : <span className="text-muted fw-normal">(opcional — substitui o atual)</span>
                 }
               </label>
-              <input
-                className="form-control"
-                type="file"
-                accept="application/pdf,.pdf"
-                onChange={handleArquivo}
-              />
+              <input className="form-control" type="file" accept="application/pdf,.pdf" onChange={handleArquivo} />
               {arquivo && (
                 <div className="form-text text-success mt-1">
                   ✔ {arquivo.name} ({(arquivo.size / 1024).toFixed(1)} KB)
@@ -161,13 +153,7 @@ export default function PropostaForm() {
             </div>
 
             <div className="d-flex justify-content-end gap-2 pt-3 border-top">
-              <button
-                type="button"
-                className="btn btn-outline-secondary"
-                onClick={() => navigate('/propostas')}
-              >
-                Cancelar
-              </button>
+              <button type="button" className="btn btn-outline-secondary" onClick={() => navigate('/propostas')}>Cancelar</button>
               <button type="submit" className="btn btn-primary" disabled={salvando}>
                 {salvando && <span className="spinner-border spinner-border-sm me-1" />}
                 Salvar Proposta
