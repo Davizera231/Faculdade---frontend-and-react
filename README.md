@@ -60,7 +60,7 @@ const api = axios.create({
 | `/clientes` | `ClientesList` | Lista de clientes |
 | `/clientes/novo` | `ClienteForm` | Cadastro de cliente |
 | `/clientes/:id/editar` | `ClienteForm` | Edição de cliente |
-| `/propostas` | `PropostasList` | Lista de propostas com status |
+| `/propostas` | `PropostasList` | Lista de propostas com filtros por status, código e data |
 | `/propostas/nova` | `PropostaForm` | Nova proposta + upload de PDF obrigatório |
 | `/propostas/:id/editar` | `PropostaForm` | Edição de proposta + substituição de PDF |
 | `/propostas/:id` | `PropostaDetalhe` | Detalhes, documentos e esteira de aprovação |
@@ -69,21 +69,23 @@ const api = axios.create({
 
 ## Validações nos formulários
 
+Toda validação de campos obrigatórios vem do backend. Quando há erro, o campo fica com **borda vermelha** e a mensagem aparece abaixo dele, além de um **toast individual por campo** com erro.
+
 ### ClienteForm
-| Campo | Obrigatório | Validação |
+| Campo | Obrigatório | Origem da validação |
 |---|---|---|
-| Nome | Sim | Não pode ser vazio — toast de erro |
-| CPF / CNPJ | Sim | Não pode ser vazio — toast de erro |
-| E-mail | Não | Se preenchido, valida formato via regex — toast de erro |
+| Nome | Sim | Backend (`@NotBlank`) — borda vermelha + toast |
+| CPF / CNPJ | Sim | Backend (`@NotBlank`) — borda vermelha + toast |
+| E-mail | Sim | Backend (`@NotBlank`) — borda vermelha + toast |
 | Tipo | Sim | Seleção fixa: `PESSOA_FISICA` ou `PESSOA_JURIDICA` |
 
 ### PropostaForm
-| Campo | Obrigatório | Validação |
+| Campo | Obrigatório | Origem da validação |
 |---|---|---|
-| Valor | Sim | `min="0.01"`, atributo `required` HTML |
-| Título | Sim | Atributo `required` HTML |
-| Cliente | Sim | Select com `required` HTML |
-| Documento PDF | Sim na criação | Valida `type === 'application/pdf'` — toast de erro; opcional na edição |
+| Título | Sim | Backend (`@NotBlank`) — borda vermelha + toast |
+| Valor | Sim | Backend (`@Positive`) — borda vermelha + toast |
+| Cliente | Sim | Backend — borda vermelha + toast |
+| Documento PDF | Sim na criação | Frontend — valida `type === 'application/pdf'` antes do envio |
 
 ---
 
@@ -174,4 +176,4 @@ esteira-frontend/
 
 ## Versão
 
-`v1.4.0` — Validação JS com toast em ClienteForm. `v1.3.0` — Upload PDF obrigatório, código automático, canais de notificação.
+`v1.5.1` — E-mail obrigatório, toast individual por campo, borda vermelha via backend. `v1.5.0` — Filtros por status, código e data na listagem de propostas. `v1.3.0` — Upload PDF obrigatório, código automático, canais de notificação.
