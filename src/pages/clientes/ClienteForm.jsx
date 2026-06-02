@@ -31,7 +31,8 @@ export default function ClienteForm() {
       toast.success(editando ? 'Cliente atualizado!' : 'Cliente cadastrado!')
       navigate('/clientes')
     } catch (err) {
-      toast.error(err.mensagem || 'Erro ao salvar cliente.')
+      const msg = err?.response?.data?.erro || 'Erro ao salvar cliente.'
+      toast.error(msg)
     } finally {
       setSalvando(false)
     }
@@ -43,17 +44,17 @@ export default function ClienteForm() {
 
       <div className="card shadow-sm">
         <div className="card-body p-4">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
 
             <div className="mb-3">
               <label className="form-label fw-semibold">Nome *</label>
-              <input className="form-control" name="nome" value={form.nome} onChange={handleChange} required />
+              <input className="form-control" name="nome" value={form.nome} onChange={handleChange} />
             </div>
 
             <div className="row g-3 mb-3">
               <div className="col-md-8">
                 <label className="form-label fw-semibold">CPF / CNPJ *</label>
-                <input className="form-control" name="cpfCnpj" value={form.cpfCnpj} onChange={handleChange} required disabled={editando} />
+                <input className="form-control" name="cpfCnpj" value={form.cpfCnpj} onChange={handleChange} disabled={editando} />
               </div>
               <div className="col-md-4">
                 <label className="form-label fw-semibold">Tipo</label>
@@ -67,7 +68,7 @@ export default function ClienteForm() {
             <div className="row g-3 mb-3">
               <div className="col-md-7">
                 <label className="form-label fw-semibold">E-mail</label>
-                <input className="form-control" name="email" type="email" value={form.email} onChange={handleChange} />
+                <input className="form-control" name="email" type="text" value={form.email} onChange={handleChange} />
               </div>
               <div className="col-md-5">
                 <label className="form-label fw-semibold">Telefone</label>
