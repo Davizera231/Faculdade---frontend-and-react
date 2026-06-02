@@ -69,7 +69,8 @@ export default function PropostaForm() {
       const data = err?.response?.data
       if (data?.campos) {
         setErros(data.campos)
-        toast.error(data.erro || 'Verifique os campos obrigatórios.')
+        // um toast separado por campo com erro
+        Object.values(data.campos).forEach(msg => toast.error(msg))
       } else {
         toast.error(data?.erro || 'Erro ao salvar proposta.')
       }
