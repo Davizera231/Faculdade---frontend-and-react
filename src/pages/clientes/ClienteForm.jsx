@@ -44,9 +44,9 @@ export default function ClienteForm() {
     } catch (err) {
       const data = err?.response?.data
       if (data?.campos) {
-        // erros de validação campo a campo
         setErros(data.campos)
-        toast.error(data.erro || 'Verifique os campos obrigatórios.')
+        // um toast separado por campo com erro
+        Object.values(data.campos).forEach(msg => toast.error(msg))
       } else {
         toast.error(data?.erro || 'Erro ao salvar cliente.')
       }
@@ -86,8 +86,9 @@ export default function ClienteForm() {
 
             <div className="row g-3 mb-3">
               <div className="col-md-7">
-                <label className="form-label fw-semibold">E-mail</label>
-                <input className="form-control" name="email" type="text" value={form.email} onChange={handleChange} />
+                <label className="form-label fw-semibold">E-mail *</label>
+                <input className={cls('email')} name="email" type="text" value={form.email} onChange={handleChange} />
+                {erros.email && <div className="invalid-feedback">{erros.email}</div>}
               </div>
               <div className="col-md-5">
                 <label className="form-label fw-semibold">Telefone</label>
