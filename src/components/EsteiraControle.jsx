@@ -50,7 +50,7 @@ export default function EsteiraControle({ propostaId, statusAtual, onAcaoExecuta
       setObservacao('')
       onAcaoExecutada()
     } catch (err) {
-      toast.error(err?.response?.data?.mensagem || 'Erro ao executar ação.')
+      toast.error(err?.response?.data?.erro || 'Erro ao executar ação.')
     } finally {
       setLoading(false)
     }

@@ -41,12 +41,6 @@ export default function PropostaForm() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-
-    if (!editando && !arquivo) {
-      toast.error('Anexe um documento PDF antes de salvar.')
-      return
-    }
-
     setSalvando(true)
     try {
       if (editando) {
@@ -54,7 +48,6 @@ export default function PropostaForm() {
         if (arquivo) await uploadDocumento(id, arquivo)
         toast.success('Proposta atualizada!')
       } else {
-        // 1º cria proposta → 2º envia PDF obrigatório
         const res = await criarProposta(form)
         const novaId = res.data.id
         await uploadDocumento(novaId, arquivo)
@@ -62,8 +55,8 @@ export default function PropostaForm() {
       }
       navigate('/propostas')
     } catch (err) {
-      const msg = err?.response?.data?.mensagem || err?.response?.data || 'Erro ao salvar proposta.'
-      toast.error(typeof msg === 'string' ? msg : 'Erro ao salvar proposta.')
+      const msg = err?.response?.data?.erro || 'Erro ao salvar proposta.'
+      toast.error(msg)
     } finally {
       setSalvando(false)
     }
@@ -75,7 +68,7 @@ export default function PropostaForm() {
 
       <div className="card shadow-sm">
         <div className="card-body p-4">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
 
             {/* Valor + Título */}
             <div className="row g-3 mb-3">
@@ -88,10 +81,8 @@ export default function PropostaForm() {
                     name="valor"
                     type="number"
                     step="0.01"
-                    min="0.01"
                     value={form.valor}
                     onChange={handleChange}
-                    required
                   />
                 </div>
               </div>
@@ -102,7 +93,6 @@ export default function PropostaForm() {
                   name="titulo"
                   value={form.titulo}
                   onChange={handleChange}
-                  required
                 />
               </div>
             </div>
@@ -127,7 +117,6 @@ export default function PropostaForm() {
                 name="clienteId"
                 value={form.cliente?.id || ''}
                 onChange={handleChange}
-                required
               >
                 <option value="">Selecione um cliente...</option>
                 {clientes.map(c => (
@@ -148,7 +137,7 @@ export default function PropostaForm() {
               />
             </div>
 
-            {/* Documento PDF obrigatório */}
+            {/* Documento PDF */}
             <div className="mb-4">
               <label className="form-label fw-semibold">
                 Documento PDF{' '}
@@ -162,7 +151,6 @@ export default function PropostaForm() {
                 type="file"
                 accept="application/pdf,.pdf"
                 onChange={handleArquivo}
-                required={!editando}
               />
               {arquivo && (
                 <div className="form-text text-success mt-1">
